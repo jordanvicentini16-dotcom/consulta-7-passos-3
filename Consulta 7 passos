@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Estudos: A Consulta em 7 Passos</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- jsPDF for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Estilos base e configuração do modo escuro com Tailwind */
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        .dark .dark\:bg-gray-800 { background-color: #1f2937; }
+        .dark .dark\:bg-gray-900 { background-color: #111827; }
+        .dark .dark\:text-white { color: #ffffff; }
+        .dark .dark\:text-gray-300 { color: #d1d5db; }
+        .dark .dark\:border-gray-700 { border-color: #374151; }
+        .dark .dark\:hover\:bg-gray-700:hover { background-color: #374151; }
+        
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #4f46e5;
+            animation: spin 1s ease infinite;
+        }
+        .dark .spinner {
+            border-left-color: #818cf8;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .accordion-content, .map-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+
+        /* Estilos para Flashcard */
+        .flashcard-container { perspective: 1000px; }
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+        }
+        .flashcard-front {
+            background-color: white;
+        }
+        .dark .flashcard-front {
+            background-color: #374151;
+        }
+        .flashcard-back {
+            background-color: #f0f9ff;
+            transform: rotateY(180deg);
+        }
+        .dark .flashcard-back {
+             background-color: #1e3a8a;
+        }
+        
+        /* Estilos para Tópicos (Mapa Mental) */
+        .map-node { cursor: pointer; }
+        .map-node > ul { padding-left: 20px; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 transition-colors duration-300">
+
+    <!-- Cabeçalho e Navegação -->
+    <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="#" class="text-xl font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2" data-page="dashboard">
+                        <i class="fas fa-book-open-reader"></i>
+                        <span>Consulta em 7 Passos</span>
+                    </a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium" data-page="dashboard">Dashboard</a>
+                        <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium" data-page="teoria">Teoria</a>
+                        <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium" data-page="topicos">Tópicos</a>
+                        <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium" data-page="flashcards">Flashcards</a>
+                        <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium" data-page="exercicios">Exercícios</a>
+                        <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium" data-page="simulador">Simulador</a>
+                        <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium" data-page="avaliacao">Avaliação</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div id="gamification-status" class="flex items-center mr-4 text-sm">
+                        <i class="fas fa-star text-yellow-400 mr-1"></i>
+                        <span id="points-display">0</span>
+                        <i class="fas fa-medal text-blue-400 ml-3 mr-1"></i>
+                        <span id="badges-display">0</span>
+                    </div>
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none">
+                        <i class="fas fa-moon text-lg"></i>
+                    </button>
+                    <div class="md:hidden ml-2">
+                         <button id="mobile-menu-button" class="p-2 rounded-md inline-flex items-center justify-center">
+                            <i class="fas fa-bars text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Menu mobile -->
+            <div id="mobile-menu" class="md:hidden hidden pb-3">
+                <a href="#" class="nav-link block px-3 py-2 rounded-md text-base font-medium" data-page="dashboard">Dashboard</a>
+                <a href="#" class="nav-link block px-3 py-2 rounded-md text-base font-medium" data-page="teoria">Teoria</a>
+                <a href="#" class="nav-link block px-3 py-2 rounded-md text-base font-medium" data-page="topicos">Tópicos</a>
+                <a href="#" class="nav-link block px-3 py-2 rounded-md text-base font-medium" data-page="flashcards">Flashcards</a>
+                <a href="#" class="nav-link block px-3 py-2 rounded-md text-base font-medium" data-page="exercicios">Exercícios</a>
+                <a href="#" class="nav-link block px-3 py-2 rounded-md text-base font-medium" data-page="simulador">Simulador</a>
+                <a href="#" class="nav-link block px-3 py-2 rounded-md text-base font-medium" data-page="avaliacao">Avaliação</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main id="app-container" class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- O conteúdo da página será injetado aqui -->
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bg-white dark:bg-gray-800 mt-8 py-4 shadow-inner">
+        <div class="container mx-auto text-center text-sm text-gray-500 dark:text-gray-400">
+            &copy; 2025 Guia de Estudos Interativo. Todos os direitos reservados.
+        </div>
+    </footer>
+    
+    <!-- Modal Genérico -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+        <div id="modal-content" class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-11/12 md:w-2/3 lg:w-1/2 max-h-[90vh] overflow-y-auto">
+            <!-- Conteúdo do Modal -->
+        </div>
+    </div>
+
+
+    <!-- Templates para as Páginas -->
+    <template id="dashboard-template">
+        <div class="fade-in">
+            <h1 class="text-3xl font-bold mb-2 dark:text-white">Seu Painel de Controle</h1>
+            <p class="text-gray-600 dark:text-gray-400 mb-6">Acompanhe seu progresso no estudo da Consulta em 7 Passos.</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Gráfico de Progresso -->
+                <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4">Progresso Geral</h2>
+                    <div class="h-80"><canvas id="progressChart"></canvas></div>
+                </div>
+                <!-- Acesso Rápido -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4">Acesso Rápido</h2>
+                    <div class="space-y-4">
+                        <a href="#" data-page="teoria" class="quick-link-card flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-all">
+                            <i class="fas fa-lightbulb text-indigo-500 text-2xl w-8"></i>
+                            <span class="ml-4 font-medium">Revisar Teoria</span>
+                        </a>
+                        <a href="#" data-page="simulador" class="quick-link-card flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900 transition-all">
+                            <i class="fas fa-user-md text-purple-500 text-2xl w-8"></i>
+                            <span class="ml-4 font-medium">✨ Praticar com IA</span>
+                        </a>
+                        <a href="#" data-page="avaliacao" class="quick-link-card flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900 transition-all">
+                            <i class="fas fa-graduation-cap text-yellow-500 text-2xl w-8"></i>
+                            <span class="ml-4 font-medium">Fazer Avaliação</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="teoria-template">
+        <div class="fade-in">
+            <h1 class="text-3xl font-bold mb-6 dark:text-white">A Consulta em 7 Passos</h1>
+            <div class="mb-6">
+                <input type="search" id="teoria-search" class="w-full p-3 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Buscar por um tópico...">
+            </div>
+            <div id="teoria-container" class="space-y-4">
+                <!-- Módulos serão inseridos aqui -->
+            </div>
+        </div>
+    </template>
+
+    <template id="topicos-template">
+        <div class="fade-in">
+            <h1 class="text-3xl font-bold mb-6 dark:text-white">Tópicos Interativos</h1>
+            <div id="mapa-container" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700" style="max-height: 70vh; overflow-y: auto;">
+                <!-- Tópicos (Mapa Mental) serão inseridos aqui -->
+            </div>
+        </div>
+    </template>
+
+    <template id="flashcards-template">
+        <div class="fade-in max-w-2xl mx-auto">
+            <h1 class="text-3xl font-bold mb-6 text-center dark:text-white">Flashcards</h1>
+            <div class="flashcard-container h-64" id="flashcard-container">
+                <!-- Flashcard será inserido aqui -->
+            </div>
+            <div class="flex justify-between items-center mt-6">
+                <button id="prev-card-btn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"><i class="fas fa-arrow-left mr-2"></i>Anterior</button>
+                <span id="card-counter" class="text-sm font-medium"></span>
+                <button id="next-card-btn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Próximo<i class="fas fa-arrow-right ml-2"></i></button>
+            </div>
+        </div>
+    </template>
+
+    <template id="exercicios-template">
+        <div class="fade-in max-w-3xl mx-auto">
+            <div id="exercicio-container" class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
+                <div class="flex justify-between items-center mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    <span>Questão <span id="question-number"></span></span>
+                    <div class="flex gap-4">
+                        <span><i class="fas fa-check-circle text-green-500"></i> Acertos: <span id="correct-count">0</span></span>
+                        <span><i class="fas fa-times-circle text-red-500"></i> Erros: <span id="incorrect-count">0</span></span>
+                    </div>
+                </div>
+                <p id="question-text" class="text-lg font-medium mb-6"></p>
+                <div id="options-container" class="grid grid-cols-1 gap-3">
+                    <!-- Opções serão inseridas aqui -->
+                </div>
+                <div id="feedback-area" class="mt-6"></div>
+                <div class="flex justify-between items-center mt-6">
+                    <button id="hint-btn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"><i class="fas fa-info-circle mr-2"></i>Dica</button>
+                    <button id="next-btn" class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors hidden">Próxima <i class="fas fa-arrow-right ml-2"></i></button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="simulador-template">
+         <div class="fade-in max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold mb-2 dark:text-white">✨ Simulador de Casos Clínicos</h1>
+            <p class="text-gray-600 dark:text-gray-400 mb-6">Pratique sua abordagem da consulta em 7 passos. Gere um caso e descreva seu plano. A IA fornecerá um feedback construtivo.</p>
+            
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <button id="generate-case-btn" class="w-full md:w-auto px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                    <i class="fas fa-sync-alt mr-2"></i> Gerar Novo Caso Clínico
+                </button>
+                
+                <div id="case-display" class="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-md min-h-[100px] flex items-center justify-center">
+                    <span class="text-gray-500 dark:text-gray-400">Clique no botão acima para gerar um caso.</span>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mt-6">
+                <h2 class="text-xl font-semibold mb-4">Sua Abordagem</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Descreva como você conduziria a consulta para o caso acima, aplicando os 7 passos.</p>
+                <textarea id="user-approach-input" rows="10" class="w-full p-3 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Passo 1: Preparação - Eu revisaria o prontuário para...&#10;Passo 2: Primeiros Minutos - Eu começaria com uma pergunta aberta..."></textarea>
+                <button id="evaluate-approach-btn" class="mt-4 w-full md:w-auto px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center" disabled>
+                    <i class="fas fa-check-double mr-2"></i> Avaliar Meu Plano
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="avaliacao-template">
+        <div class="fade-in text-center max-w-2xl mx-auto">
+            <h1 class="text-3xl font-bold mb-2 dark:text-white">Avaliação Progressiva</h1>
+            <p class="text-gray-600 dark:text-gray-400 mb-8">Teste seus conhecimentos. Desbloqueie novos níveis alcançando a nota mínima.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Nível Fácil -->
+                <div class="level-card" data-level="facil">
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
+                        <i class="fas fa-child text-4xl text-green-500 mb-3"></i>
+                        <h3 class="text-xl font-semibold">Fácil</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Nota mínima: 70%</p>
+                        <button class="start-btn w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">Iniciar</button>
+                    </div>
+                </div>
+                <!-- Nível Médio -->
+                <div class="level-card relative" data-level="medio">
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
+                        <i class="fas fa-user text-4xl text-yellow-500 mb-3"></i>
+                        <h3 class="text-xl font-semibold">Médio</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Nota mínima: 80%</p>
+                        <button class="start-btn w-full px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors" disabled>Iniciar</button>
+                        <div class="lock-overlay absolute inset-0 bg-gray-400 dark:bg-gray-700 bg-opacity-70 flex items-center justify-center rounded-lg"><i class="fas fa-lock text-3xl text-white"></i></div>
+                    </div>
+                </div>
+                <!-- Nível Difícil -->
+                <div class="level-card relative" data-level="dificil">
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
+                        <i class="fas fa-user-graduate text-4xl text-red-500 mb-3"></i>
+                        <h3 class="text-xl font-semibold">Difícil</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Nota mínima: 90%</p>
+                        <button class="start-btn w-full px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors" disabled>Iniciar</button>
+                        <div class="lock-overlay absolute inset-0 bg-gray-400 dark:bg-gray-700 bg-opacity-70 flex items-center justify-center rounded-lg"><i class="fas fa-lock text-3xl text-white"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div id="last-scores" class="mt-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-3">Últimas Pontuações</h3>
+                <p><strong>Fácil:</strong> <span id="score-facil">--</span>%</p>
+                <p><strong>Médio:</strong> <span id="score-medio">--</span>%</p>
+                <p><strong>Difícil:</strong> <span id="score-dificil">--</span>%</p>
+            </div>
+        </div>
+    </template>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // =================================================================================
+        // MÓDULO DE DADOS E CONTEÚDO - TEMA: A CONSULTA EM 7 PASSOS
+        // =================================================================================
+        const contentData = {
+            teoria: [
+                { id: 'fase1', title: 'Fase Inicial: Preparação e Primeiros Minutos', content: 'Esta fase é crucial para estabelecer o tom da consulta. Requer concentração e focalização de atenção e energia. É a "decolagem" do processo, onde as primeiras impressões são formadas e a base para uma relação terapêutica é construída.', subtopics: [
+                    { id: 'passo1', title: 'Passo 1: Preparação', content: 'A preparação incide sobre três pólos: o médico (autoavaliação de seu estado físico e emocional), o paciente (revisão do prontuário, contexto familiar, problemas ativos, plano anterior) e o ambiente do consultório (organização, limpeza, privacidade). Uma boa preparação evita a "contaminação" da consulta por fatores externos e demonstra profissionalismo.' },
+                    { id: 'passo2', title: 'Passo 2: Os Primeiros Minutos', content: 'Momento vital para o sucesso da consulta. Inclui o acolhimento, o cumprimento e, mais importante, a escuta ativa. O objetivo é descobrir todos os motivos da consulta ("a agenda do paciente") para evitar a "síndrome da mão na maçaneta". A pergunta-chave é: "Por que este paciente veio me consultar hoje?". É aqui que se começa a construir o clima terapêutico.' },
+                ]},
+                { id: 'fase2', title: 'Fase Intermédia: Exploração, Avaliação e Plano (EAP)', content: 'Corresponde ao "voo" da consulta, onde se recolhe e processa a informação de forma sistematizada. Embora os passos sejam sequenciais, na prática há um fluxo contínuo entre eles, sempre com a participação ativa do paciente.', subtopics: [
+                    { id: 'passo3', title: 'Passo 3: Exploração', content: 'Condução da anamnese e do exame físico. A anamnese tem valor diagnóstico e terapêutico, pois permite ao paciente organizar sua história. É fundamental explorar a dimensão biomédica (sintomas, sinais) e a psicossocial (sentimentos, crenças, impacto na qualidade de vida - o "padecimento"). O exame físico deve ser adequado para testar as hipóteses geradas.' },
+                    { id: 'passo4', title: 'Passo 4: Avaliação', content: 'É o momento de inter-relacionar os dados e integrá-los em um quadro explicativo coerente. Envolve formular diagnósticos, mas também "devolver" ao paciente uma explicação que faça sentido para ele, conciliando a racionalidade médica com a cultura e preocupações do paciente ("encontro de agendas"). O registro clínico estruturado, como o método SOAP, é fundamental aqui.' },
+                    { id: 'passo5', title: 'Passo 5: Plano', content: 'Definição do plano de cuidados de forma negociada. O médico propõe, justifica (com base no prognóstico) e discute as opções com o paciente. O objetivo é chegar a um acordo e a compromissos, promovendo o envolvimento e a responsabilidade do paciente em seu próprio cuidado (empoderamento). Pode incluir prevenção "oportunística".' },
+                ]},
+                { id: 'fase3', title: 'Fase Final: Encerramento e Reflexão', content: 'É a "aterragem" da consulta, o momento de resumir, verificar o entendimento e pensar nos próximos passos, garantindo um fechamento seguro e produtivo.', subtopics: [
+                    { id: 'passo6', title: 'Passo 6: Encerramento', content: 'Verificar se restam dúvidas ("O senhor(a) tem alguma pergunta?"), recapitular os pontos principais do plano acordado e confirmar se a "agenda" do paciente foi atendida. Um bom encerramento fortalece a confiança e a adesão, e deve ser finalizado com um cumprimento de despedida formal.' },
+                    { id: 'passo7', title: 'Passo 7: Reflexão e Notas Finais', content: 'Um passo para o médico. Serve para completar os registros clínicos com calma e, crucialmente, para uma autorreflexão sobre a consulta: pontos fortes, fracos, o que foi aprendido e aspectos a melhorar. Ajuda na "limpeza mental" antes de passar para o próximo paciente, prevenindo o esgotamento.' },
+                ]},
+            ],
+            flashcards: [
+                { q: 'Quais são os 3 pólos de atenção no Passo 1: Preparação?', a: 'O médico (autoavaliação), o paciente (revisão do prontuário) e o ambiente do consultório.' },
+                { q: 'O que é a "síndrome da mão na maçaneta"?', a: 'É quando o paciente apresenta uma queixa importante ou a principal razão da consulta no momento em que está saindo, com a mão na maçaneta da porta.' },
+                { q: 'Qual a pergunta-chave do Passo 2: Primeiros Minutos?', a: '"Por que este paciente veio me consultar hoje?" - buscando entender a real motivação e preocupação.' },
+                { q: 'Diferencie "disease" de "illness" no contexto do Passo 3.', a: '"Disease" (doença) é o diagnóstico biomédico. "Illness" (padecimento) é a experiência subjetiva do paciente com a doença.' },
+                { q: 'O que significa a sigla SOAP?', a: 'Subjetivo, Objetivo, Avaliação, Plano. É um método para estruturar os registros clínicos.' },
+                { q: 'O que é "empoderamento do paciente"?', a: 'É o processo de capacitar o paciente para que ele participe ativamente das decisões e assuma co-responsabilidade sobre seu plano de cuidados.' },
+                { q: 'Qual o objetivo de recapitular o plano no Passo 6?', a: 'Garantir que o paciente compreendeu corretamente o que foi acordado, aumentando a segurança e a adesão ao tratamento.' },
+                { q: 'O Passo 7: Reflexão é voltado para quem?', a: 'É um passo voltado para o médico, para sua autoavaliação, aprendizado e bem-estar profissional.' },
+                { q: 'O que é o "encontro de agendas" no Passo 4?', a: 'É a harmonização entre a agenda do médico (baseada em conhecimento técnico) e a agenda do paciente (baseada em suas crenças, medos e expectativas).' },
+                { q: 'Qual a importância de um cumprimento formal no início e no fim da consulta?', a: 'Marca o início e o fim do ato clínico, demonstra respeito e ajuda a construir e a manter uma relação terapêutica profissional.' },
+            ],
+            exercicios: [
+                { type: 'mc', question: 'No Passo 1 (Preparação), qual dos seguintes itens NÃO é um dos três pólos de atenção?', options: ['O médico', 'O paciente', 'O sistema de saúde', 'O ambiente do gabinete'], answer: 2, hint: 'A preparação foca-se nos elementos imediatos da consulta: o profissional, o paciente e o local.' },
+                { type: 'tf', question: 'A "regra dos 18 segundos" sugere que o médico deve interromper o paciente após 18 segundos para otimizar o tempo.', options: ['Verdadeiro', 'Falso'], answer: 1, hint: 'Pelo contrário, a regra critica a interrupção precoce e defende a escuta ativa para entender completamente o paciente.' },
+                { type: 'mc', question: 'O que significa a sigla SOAP no contexto do registro clínico?', options: ['Sintoma, Observação, Ação, Prognóstico', 'Subjetivo, Objetivo, Avaliação, Plano', 'Saúde, Ocupação, Análise, Prevenção', 'Situação, Ocorrência, Ação, Progresso'], answer: 1, hint: 'É um método estruturado para organizar as anotações clínicas.' },
+                { type: 'tf', question: 'O "empoderamento" do paciente, discutido no Passo 5, significa que o médico transfere toda a responsabilidade do tratamento para o paciente.', options: ['Verdadeiro', 'Falso'], answer: 1, hint: 'Empoderamento é sobre co-responsabilização e participação ativa do paciente nas decisões, não sobre transferência total de responsabilidade.' },
+                { type: 'mc', question: 'A "síndrome da mão na maçaneta" é melhor prevenida em qual passo?', options: ['Passo 2: Primeiros Minutos', 'Passo 4: Avaliação', 'Passo 6: Encerramento', 'Passo 1: Preparação'], answer: 0, hint: 'Identificar todos os motivos da consulta no início (acertar a agenda) é a forma mais eficaz de evitar que novas queixas surjam no final.' },
+                { type: 'mc', question: 'A exploração da experiência subjetiva do paciente com sua doença (o "padecimento" ou "illness") é uma característica central de qual passo?', options: ['Passo 1: Preparação', 'Passo 3: Exploração', 'Passo 5: Plano', 'Passo 7: Reflexão'], answer: 1, hint: 'A exploração vai além dos sintomas e busca entender o impacto da doença na vida do paciente.' },
+                { type: 'tf', question: 'O Passo 7 (Reflexão) deve ser feito, preferencialmente, junto com o paciente para que ele dê seu feedback.', options: ['Verdadeiro', 'Falso'], answer: 1, hint: 'O Passo 7 é um momento de autorreflexão do médico, realizado após a saída do paciente.' },
+                { type: 'mc', question: 'Quando um médico propõe, negocia e chega a um acordo com o paciente sobre as ações e objetivos do tratamento, ele está executando qual passo?', options: ['Passo 3: Exploração', 'Passo 4: Avaliação', 'Passo 5: Plano', 'Passo 6: Encerramento'], answer: 2, hint: 'A negociação e o acordo são a essência do Passo 5.' },
+            ],
+            avaliacao: {
+                facil: [
+                    { type: 'mc', question: 'Qual das seguintes ações é o foco principal do Passo 1: Preparação?', options: ['Realizar o exame físico', 'Revisar o prontuário do paciente antes de chamá-lo', 'Negociar o plano de tratamento', 'Refletir sobre a consulta anterior'], answer: 1 },
+                    { type: 'tf', question: 'Acordar a "ordem de trabalhos" com o paciente é uma tarefa do Passo 5 (Plano).', options: ['Verdadeiro', 'Falso'], answer: 1 },
+                    { type: 'mc', question: 'O registro clínico pelo método SOAP é realizado principalmente durante qual passo?', options: ['Passo 2: Primeiros Minutos', 'Passo 3: Exploração', 'Passo 4: Avaliação', 'Passo 6: Encerramento'], answer: 2 },
+                    { type: 'tf', question: 'A fase final da consulta inclui os passos de Encerramento e Reflexão.', options: ['Verdadeiro', 'Falso'], answer: 0 },
+                ],
+                medio: [
+                    { type: 'mc', question: 'Um paciente chega para uma consulta e, após o médico perguntar "Como posso ajudar?", ele começa a falar. O médico o interrompe após 20 segundos para fazer perguntas diretas sobre o sintoma. Esta atitude vai CONTRA os princípios de qual passo?', options: ['Passo 1: Preparação', 'Passo 2: Primeiros Minutos', 'Passo 4: Avaliação', 'Passo 5: Plano'], answer: 1 },
+                    { type: 'tf', question: 'A análise SWOT (Forças, Fraquezas, Oportunidades, Ameaças) é uma ferramenta para ajudar o médico a formular o diagnóstico biomédico do paciente.', options: ['Verdadeiro', 'Falso'], answer: 1 },
+                    { type: 'mc', question: 'Um médico explica a um paciente: "O senhor tem uma gastrite crônica por H. pylori". O paciente parece confuso. Para seguir o modelo centrado na pessoa, qual seria a melhor próxima atitude do médico?', options: ['Repetir a informação mais alto', 'Prescrever o tratamento imediatamente', 'Perguntar ao paciente o que ele entende por "gastrite" ou o que o preocupa sobre isso', 'Entregar um folheto sobre H. pylori'], answer: 2 },
+                    { type: 'mc', question: 'A "pergunta-chave" - Por que este paciente veio consultar-me hoje? - orienta qual dos passos?', options: ['Passo 1', 'Passo 2', 'Passo 3', 'Passo 4'], answer: 1 },
+                ],
+                dificil: [
+                    { type: 'mc', question: 'Um paciente com diabetes tipo 2, mal controlado, diz: "Doutor, eu sei que preciso me cuidar, mas é muito difícil". Segundo o Passo 5 (Plano), qual a abordagem mais eficaz para promover o "empoderamento"?', options: ['Avisar sobre os riscos graves da diabetes e insistir no tratamento', 'Dizer que ele é o único responsável e deve se esforçar mais', 'Explorar com ele quais são as maiores dificuldades e negociar metas pequenas e realistas em conjunto', 'Encaminhá-lo imediatamente para um especialista'], answer: 2 },
+                    { type: 'tf', question: 'No final da consulta (Passo 6), o médico pergunta: "Ficou alguma dúvida?". O paciente diz que não. O médico pode considerar a agenda do paciente como completamente esgotada e encerrar a consulta com segurança.', options: ['Verdadeiro', 'Falso'], answer: 1 },
+                    { type: 'mc', question: 'Após uma consulta tensa com um paciente exigente, o médico se sente frustrado. A melhor forma de lidar com esse sentimento, de acordo com os 7 passos, é:', options: ['Ignorar o sentimento e chamar o próximo paciente rapidamente para não atrasar', 'Comentar sobre o paciente com um colega no corredor', 'Usar o Passo 7 (Reflexão) para analisar o que aconteceu, entender suas próprias reações e fazer uma "limpeza emocional"', 'Prescrever um calmante para si mesmo'], answer: 2 },
+                    { type: 'mc', question: 'Conciliar a racionalidade técnico-científica com a cultura e crenças do paciente ("encontro de agendas") é o principal desafio de qual passo?', options: ['Passo 2', 'Passo 3', 'Passo 4', 'Passo 5'], answer: 2 },
+                ]
+            }
+        };
+
+        const badges = [
+            { id: 'primeiro_acerto', name: 'Iniciante', condition: (data) => data.exercicios.correct > 0 },
+            { id: 'dez_acertos', name: 'Praticante', condition: (data) => data.exercicios.correct >= 10 },
+            { id: 'aprovado_facil', name: 'Aprovado no Fácil', condition: (data) => data.avaliacao.facil.score >= 70 },
+            { id: 'mestre_facil', name: 'Mestre do Fácil', condition: (data) => data.avaliacao.facil.score === 100 },
+        ];
+
+
+        // =================================================================================
+        // MÓDULO DE GERENCIAMENTO DE ESTADO (LOCALSTORAGE)
+        // =================================================================================
+        const AppState = {
+            _data: null,
+            
+            init() {
+                const savedData = localStorage.getItem('studyGuideData_7passos');
+                if (savedData) {
+                    this._data = JSON.parse(savedData);
+                } else {
+                    this._data = this.getDefaults();
+                }
+                this.save();
+            },
+
+            get() {
+                return this._data;
+            },
+
+            save() {
+                // Calcular percentuais antes de salvar
+                const totalTeoria = contentData.teoria.reduce((acc, mod) => acc + 1 + mod.subtopics.length, 0);
+                this._data.teoria.percent = totalTeoria > 0 ? (this._data.teoria.completed.length / totalTeoria) * 100 : 0;
+                
+                const totalExercicios = contentData.exercicios.length;
+                const exerciciosFeitos = this._data.exercicios.answered.length;
+                this._data.exercicios.percent = totalExercicios > 0 ? (exerciciosFeitos / totalExercicios) * 100 : 0;
+                
+                const avaliacoesCompletas = Object.values(this._data.avaliacao).filter(level => level.score !== null).length;
+                this._data.avaliacao.percent = (avaliacoesCompletas / 3) * 100;
+
+                localStorage.setItem('studyGuideData_7passos', JSON.stringify(this._data));
+                UI.updateGamificationDisplay();
+            },
+
+            update(updater) {
+                updater(this._data);
+                this.save();
+            },
+
+            getDefaults() {
+                return {
+                    theme: 'light',
+                    gamification: { points: 0, badges: [] },
+                    teoria: { completed: [], favorites: [], percent: 0 },
+                    exercicios: { correct: 0, incorrect: 0, answered: [], percent: 0 },
+                    avaliacao: {
+                        facil: { score: null, report: null },
+                        medio: { score: null, report: null },
+                        dificil: { score: null, report: null },
+                        percent: 0,
+                    }
+                };
+            }
+        };
+
+        // =================================================================================
+        // MÓDULO DA API GEMINI (MODO STANDALONE)
+        // =================================================================================
+        const GeminiAPI = {
+            // Esta função foi modificada para funcionar offline.
+            // Ela retorna respostas de exemplo em vez de chamar a API real.
+            // Para reativar a funcionalidade de IA, substitua o conteúdo desta função
+            // pela lógica de chamada 'fetch' e forneça uma chave de API válida.
+            async generateContent(prompt) {
+                console.log("Modo Standalone: Gerando resposta de exemplo para o prompt:", prompt);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Simula o tempo de resposta da rede
+
+                if (prompt.includes("Gere um caso clínico")) {
+                    return "Maria, 58 anos, professora aposentada, procura a consulta com queixa de 'cansaço que não passa' há cerca de 2 meses. Ela relata dificuldade para realizar suas atividades diárias e um desânimo constante. Nega febre ou dor específica.";
+                }
+                if (prompt.includes("Avalie a seguinte abordagem")) {
+                    return "Feedback de Exemplo:\n\n**Pontos Fortes:**\n- Sua abordagem no Passo 2, ao focar em perguntas abertas, é excelente para estabelecer um bom vínculo.\n- A negociação de metas no Passo 5 demonstra uma boa aplicação do conceito de empoderamento.\n\n**Áreas para Melhoria:**\n- No Passo 3 (Exploração), seria interessante investigar mais a fundo o impacto do cansaço na vida social e emocional da paciente (a dimensão 'illness').\n- No Passo 4 (Avaliação), lembre-se de sempre verificar o que a paciente pensa sobre a causa do seu cansaço antes de apresentar suas hipóteses diagnósticas.\n\nNo geral, uma abordagem bem estruturada e centrada na paciente. Continue praticando!";
+                }
+                if (prompt.includes("Explique em detalhes")) {
+                     return "Explicação de Exemplo:\n\nEste tópico é fundamental para a consulta. Uma explicação detalhada abordaria os seguintes pontos:\n1.  **Definição do Conceito:** O que é e por que é importante.\n2.  **Aplicação Prática:** Como o conceito se manifesta durante a consulta, com exemplos de frases ou ações.\n3.  **Impacto no Resultado:** Como a aplicação correta deste conceito melhora a adesão do paciente e os desfechos de saúde.\n\n(Esta é uma resposta de exemplo. Para uma explicação real, use a versão online do aplicativo.)";
+                }
+                
+                return "Funcionalidade de IA desativada no modo offline. Esta é uma resposta de exemplo.";
+            }
+        };
+
+        // =================================================================================
+        // MÓDULO DE UI E ROTEAMENTO
+        // =================================================================================
+        const UI = {
+            appContainer: document.getElementById('app-container'),
+            currentPage: 'dashboard',
+            chartInstance: null,
+
+            init() {
+                this.setupEventListeners();
+                this.applyTheme(AppState.get().theme);
+                this.navigateTo('dashboard');
+            },
+
+            setupEventListeners() {
+                document.getElementById('theme-toggle').addEventListener('click', () => this.toggleTheme());
+                document.getElementById('mobile-menu-button').addEventListener('click', () => {
+                    document.getElementById('mobile-menu').classList.toggle('hidden');
+                });
+
+                document.body.addEventListener('click', e => {
+                    const navLink = e.target.closest('.nav-link');
+                    const quickLink = e.target.closest('.quick-link-card');
+                    if (navLink) {
+                        e.preventDefault();
+                        this.navigateTo(navLink.dataset.page);
+                        document.getElementById('mobile-menu').classList.add('hidden');
+                    }
+                    if (quickLink) {
+                        e.preventDefault();
+                        this.navigateTo(quickLink.dataset.page);
+                    }
+                });
+            },
+
+            navigateTo(page) {
+                if (!document.getElementById(`${page}-template`)) return;
+                this.currentPage = page;
+                
+                const template = document.getElementById(`${page}-template`);
+                this.appContainer.innerHTML = '';
+                this.appContainer.appendChild(template.content.cloneNode(true));
+                
+                this.updateActiveNavLink();
+                
+                const pageInitializer = `init${page.charAt(0).toUpperCase() + page.slice(1)}Page`;
+                if (typeof this[pageInitializer] === 'function') {
+                    this[pageInitializer]();
+                }
+            },
+
+            updateActiveNavLink() {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.toggle('text-indigo-600', link.dataset.page === this.currentPage);
+                    link.classList.toggle('dark:text-indigo-400', link.dataset.page === this.currentPage);
+                });
+            },
+
+            toggleTheme() {
+                const newTheme = AppState.get().theme === 'light' ? 'dark' : 'light';
+                AppState.update(data => data.theme = newTheme);
+                this.applyTheme(newTheme);
+            },
+
+            applyTheme(theme) {
+                const themeIcon = document.querySelector('#theme-toggle i');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                }
+            },
+
+            updateGamificationDisplay() {
+                const data = AppState.get();
+                document.getElementById('points-display').textContent = data.gamification.points;
+                document.getElementById('badges-display').textContent = data.gamification.badges.length;
+            },
+
+            initDashboardPage() { this.renderProgressChart(); },
+            initTeoriaPage() { Teoria.render(); },
+            initTopicosPage() { MapaMental.render(); },
+            initFlashcardsPage() { Flashcards.start(); },
+            initExerciciosPage() { Exercicios.start(); },
+            initSimuladorPage() { Simulador.init(); },
+            initAvaliacaoPage() { Avaliacao.renderLevelSelection(); },
+
+            renderProgressChart() {
+                const ctx = document.getElementById('progressChart')?.getContext('2d');
+                if (!ctx) return;
+                
+                if (this.chartInstance) this.chartInstance.destroy();
+                
+                const progress = AppState.get();
+                const data = {
+                    labels: ['Teoria', 'Exercícios', 'Avaliação'],
+                    datasets: [{
+                        label: 'Progresso (%)',
+                        data: [
+                            progress.teoria.percent.toFixed(1), 
+                            progress.exercicios.percent.toFixed(1),
+                            progress.avaliacao.percent.toFixed(1)
+                        ],
+                        backgroundColor: ['rgba(99, 102, 241, 0.7)', 'rgba(34, 197, 94, 0.7)', 'rgba(234, 179, 8, 0.7)'],
+                        borderColor: ['rgba(99, 102, 241, 1)', 'rgba(34, 197, 94, 1)', 'rgba(234, 179, 8, 1)'],
+                        borderWidth: 1
+                    }]
+                };
+
+                this.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, max: 100 } },
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } } }
+                    }
+                });
+            },
+            
+            openModal(content, title = 'Informação') {
+                const modal = document.getElementById('modal');
+                const modalContent = document.getElementById('modal-content');
+                modalContent.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">${title}</h2>
+                        <button class="close-modal-btn text-2xl hover:text-red-500">&times;</button>
+                    </div>
+                    <div>${content}</div>
+                `;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modal.addEventListener('click', this.closeModalHandler);
+            },
+            
+            showLoadingModal(title = 'Carregando...') {
+                this.openModal('<div class="flex justify-center items-center p-8"><div class="spinner"></div></div>', title);
+            },
+
+            closeModalHandler(e) {
+                if (e.target.id === 'modal' || e.target.closest('.close-modal-btn')) {
+                    const modal = document.getElementById('modal');
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    modal.removeEventListener('click', UI.closeModalHandler);
+                }
+            }
+        };
+
+        // =================================================================================
+        // MÓDULO DE TEORIA
+        // =================================================================================
+        const Teoria = {
+            render(filter = '') {
+                const container = document.getElementById('teoria-container');
+                if (!container) return;
+                
+                const data = AppState.get();
+                const filteredModules = contentData.teoria.filter(mod => 
+                    mod.title.toLowerCase().includes(filter.toLowerCase()) ||
+                    mod.content.toLowerCase().includes(filter.toLowerCase())
+                );
+
+                if (filteredModules.length === 0) {
+                    container.innerHTML = `<p class="text-center text-gray-500">Nenhum tópico encontrado.</p>`;
+                    return;
+                }
+
+                container.innerHTML = filteredModules.map(mod => this.createModuleHTML(mod, data)).join('');
+                this.addEventListeners();
+            },
+
+            createModuleHTML(mod, data) {
+                const isFavorite = data.teoria.favorites.includes(mod.id);
+                const isCompleted = data.teoria.completed.includes(mod.id);
+                return `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                        <button class="accordion-toggle w-full flex justify-between items-center p-4 text-left font-semibold">
+                            <span>${mod.title}</span>
+                            <i class="fas fa-chevron-down transition-transform"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="p-4 border-t dark:border-gray-700">
+                                <p class="mb-4">${mod.content}</p>
+                                <div class="flex items-center justify-between mb-4">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox" class="complete-checkbox" data-id="${mod.id}" ${isCompleted ? 'checked' : ''}>
+                                        <span class="ml-2 text-sm">Marcar como concluído</span>
+                                    </label>
+                                    <button class="favorite-btn text-xl ${isFavorite ? 'text-yellow-400' : 'text-gray-400'}" data-id="${mod.id}">
+                                        <i class="fas fa-star"></i>
+                                    </button>
+                                </div>
+                                ${mod.subtopics.map(sub => this.createSubtopicHTML(sub, data)).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+            
+            createSubtopicHTML(sub, data) {
+                const isCompleted = data.teoria.completed.includes(sub.id);
+                return `
+                    <div class="ml-4 mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold">${sub.title}</h4>
+                                <p class="text-sm mt-1">${sub.content}</p>
+                            </div>
+                            <button class="deepen-topic-btn text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-md hover:bg-indigo-200 whitespace-nowrap" data-topic="${sub.title}">
+                                ✨ Aprofundar
+                            </button>
+                        </div>
+                        <label class="flex items-center cursor-pointer mt-2">
+                            <input type="checkbox" class="complete-checkbox" data-id="${sub.id}" ${isCompleted ? 'checked' : ''}>
+                            <span class="ml-2 text-xs">Concluído</span>
+                        </label>
+                    </div>
+                `;
+            },
+
+            addEventListeners() {
+                document.getElementById('teoria-search')?.addEventListener('input', e => this.render(e.target.value));
+                
+                document.querySelectorAll('.accordion-toggle').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const content = button.nextElementSibling;
+                        const icon = button.querySelector('i');
+                        if (content.style.maxHeight) {
+                            content.style.maxHeight = null;
+                            icon.classList.remove('rotate-180');
+                        } else {
+                            content.style.maxHeight = content.scrollHeight + "px";
+                            icon.classList.add('rotate-180');
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('.favorite-btn').forEach(btn => btn.addEventListener('click', e => this.toggleFavorite(e.currentTarget.dataset.id)));
+                document.querySelectorAll('.complete-checkbox').forEach(box => box.addEventListener('change', e => this.toggleCompleted(e.currentTarget.dataset.id, e.currentTarget.checked)));
+                document.querySelectorAll('.deepen-topic-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+                    const topic = e.currentTarget.dataset.topic;
+                    UI.showLoadingModal(`Aprofundando sobre ${topic}...`);
+                    const prompt = `Explique em detalhes a importância do '${topic}' na consulta de medicina da família e comunidade, com exemplos práticos. A explicação deve ser clara para um estudante de medicina.`;
+                    const explanation = await GeminiAPI.generateContent(prompt);
+                    UI.openModal(`<p>${explanation.replace(/\n/g, '<br>')}</p>`, `Aprofundando: ${topic}`);
+                }));
+            },
+            
+            toggleFavorite(id) {
+                AppState.update(data => {
+                    const index = data.teoria.favorites.indexOf(id);
+                    if (index > -1) data.teoria.favorites.splice(index, 1);
+                    else data.teoria.favorites.push(id);
+                });
+                this.render(document.getElementById('teoria-search')?.value || '');
+            },
+            
+            toggleCompleted(id, isChecked) {
+                AppState.update(data => {
+                    const index = data.teoria.completed.indexOf(id);
+                    if (isChecked && index === -1) {
+                        data.teoria.completed.push(id);
+                        Gamification.addPoints(5);
+                    } else if (!isChecked && index > -1) {
+                        data.teoria.completed.splice(index, 1);
+                    }
+                });
+            }
+        };
+
+        // =================================================================================
+        // MÓDULO DE TÓPICOS (MAPA MENTAL)
+        // =================================================================================
+        const MapaMental = {
+            render() {
+                const container = document.getElementById('mapa-container');
+                if (!container) return;
+                container.innerHTML = `
+                    <ul class="space-y-2">
+                        <li class="map-node">
+                            <strong class="text-lg text-indigo-600 dark:text-indigo-400"><i class="fas fa-brain mr-2"></i>A Consulta em 7 Passos</strong>
+                            <ul class="map-content">
+                                ${this.createNodeHTML('1º Passo: Preparação', 'Auto-avaliação do médico; Revisão do paciente; Verificação do ambiente.')}
+                                ${this.createNodeHTML('2º Passo: Primeiros Minutos', 'Acolhimento; Escuta ativa; Acerto de agendas; Identificar motivo(s) da consulta.')}
+                                ${this.createNodeHTML('3º Passo: Exploração', 'Anamnese; Exame Físico; Contextualização dos problemas.')}
+                                ${this.createNodeHTML('4º Passo: Avaliação', 'Interpretação de dados; Formulação de diagnósticos; Explicação ao paciente (sentido); Avaliação de impactos.')}
+                                ${this.createNodeHTML('5º Passo: Plano', 'Propor e negociar cuidados; Acordos e compromissos; Prevenção; Empoderamento do paciente.')}
+                                ${this.createNodeHTML('6º Passo: Encerramento', 'Verificar dúvidas; Rever o plano acordado; Despedida formal.')}
+                                ${this.createNodeHTML('7º Passo: Reflexão', 'Auto-reflexão sobre a consulta; Completar registros; Identificar pontos a melhorar.')}
+                            </ul>
+                        </li>
+                    </ul>
+                `;
+                this.addEventListeners();
+            },
+            createNodeHTML(title, content) {
+                return `
+                    <li class="map-node border-l-2 border-gray-300 dark:border-gray-600 pl-2">
+                        <div class="font-semibold flex items-center"><i class="fas fa-chevron-right fa-xs mr-2 transition-transform"></i>${title}</div>
+                        <ul class="map-content text-sm text-gray-600 dark:text-gray-400">
+                           <li class="pt-1 pl-4">${content}</li>
+                        </ul>
+                    </li>
+                `;
+            },
+            addEventListeners() {
+                document.querySelectorAll('.map-node > div, .map-node > strong').forEach(node => {
+                    node.addEventListener('click', (e) => {
+                        const content = e.currentTarget.parentElement.querySelector('.map-content');
+                        const icon = e.currentTarget.querySelector('i');
+                        if (content.style.maxHeight) {
+                            content.style.maxHeight = null;
+                            icon?.classList.remove('rotate-90');
+                        } else {
+                            content.style.maxHeight = content.scrollHeight + "px";
+                            icon?.classList.add('rotate-90');
+                        }
+                    });
+                });
+            }
+        };
+
+        // =================================================================================
+        // MÓDULO DE FLASHCARDS
+        // =================================================================================
+        const Flashcards = {
+            currentIndex: 0,
+            
+            start() {
+                this.currentIndex = 0;
+                this.render();
+                this.addEventListeners();
+            },
+            
+            render() {
+                const container = document.getElementById('flashcard-container');
+                if (!container) return;
+                const card = contentData.flashcards[this.currentIndex];
+                
+                container.innerHTML = `
+                    <div class="flashcard cursor-pointer">
+                        <div class="flashcard-face flashcard-front shadow-lg">
+                            <p class="text-xl font-semibold text-center">${card.q}</p>
+                        </div>
+                        <div class="flashcard-face flashcard-back shadow-lg">
+                            <p class="text-md text-center">${card.a}</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('card-counter').textContent = `${this.currentIndex + 1} / ${contentData.flashcards.length}`;
+            },
+            
+            addEventListeners() {
+                document.getElementById('flashcard-container').addEventListener('click', () => {
+                    document.querySelector('.flashcard').classList.toggle('is-flipped');
+                });
+                document.getElementById('next-card-btn').addEventListener('click', () => this.navigate(1));
+                document.getElementById('prev-card-btn').addEventListener('click', () => this.navigate(-1));
+            },
+            
+            navigate(direction) {
+                this.currentIndex += direction;
+                if (this.currentIndex < 0) {
+                    this.currentIndex = contentData.flashcards.length - 1;
+                } else if (this.currentIndex >= contentData.flashcards.length) {
+                    this.currentIndex = 0;
+                }
+                this.render();
+            }
+        };
+        
+        // =================================================================================
+        // MÓDULO DE EXERCÍCIOS
+        // =================================================================================
+        const Exercicios = {
+            currentIndex: 0,
+            
+            start() {
+                this.currentIndex = 0;
+                this.renderQuestion();
+                this.updateCounters();
+                this.addEventListeners();
+            },
+            
+            renderQuestion() {
+                const q = contentData.exercicios[this.currentIndex];
+                if (!q) {
+                    this.showCompletion();
+                    return;
+                }
+                
+                document.getElementById('question-number').textContent = `${this.currentIndex + 1}/${contentData.exercicios.length}`;
+                document.getElementById('question-text').textContent = q.question;
+                
+                const optionsContainer = document.getElementById('options-container');
+                optionsContainer.innerHTML = q.options.map((opt, i) => 
+                    `<button class="option-btn p-3 text-left w-full rounded-md border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" data-index="${i}">${opt}</button>`
+                ).join('');
+                
+                document.getElementById('feedback-area').innerHTML = '';
+                document.getElementById('next-btn').classList.add('hidden');
+            },
+            
+            addEventListeners() {
+                const container = document.getElementById('exercicio-container');
+                container.querySelector('#options-container').addEventListener('click', e => {
+                    if (e.target.classList.contains('option-btn')) {
+                        this.checkAnswer(parseInt(e.target.dataset.index));
+                    }
+                });
+                container.querySelector('#hint-btn').addEventListener('click', () => this.showHint());
+                container.querySelector('#next-btn').addEventListener('click', () => this.nextQuestion());
+            },
+
+            checkAnswer(selectedIndex) {
+                const q = contentData.exercicios[this.currentIndex];
+                const isCorrect = selectedIndex === q.answer;
+                
+                AppState.update(data => {
+                    if (!data.exercicios.answered.includes(this.currentIndex)) {
+                        data.exercicios.answered.push(this.currentIndex);
+                        if (isCorrect) {
+                            data.exercicios.correct++;
+                            Gamification.addPoints(10);
+                        } else {
+                            data.exercicios.incorrect++;
+                        }
+                    }
+                });
+
+                this.showFeedback(isCorrect);
+                this.updateCounters();
+                
+                document.querySelectorAll('.option-btn').forEach(btn => {
+                    btn.disabled = true;
+                    if (parseInt(btn.dataset.index) === q.answer) {
+                        btn.classList.add('bg-green-200', 'dark:bg-green-800', 'border-green-500');
+                    } else if (parseInt(btn.dataset.index) === selectedIndex) {
+                        btn.classList.add('bg-red-200', 'dark:bg-red-800', 'border-red-500');
+                    }
+                });
+                document.getElementById('next-btn').classList.remove('hidden');
+            },
+            
+            showFeedback(isCorrect) {
+                const feedbackArea = document.getElementById('feedback-area');
+                const q = contentData.exercicios[this.currentIndex];
+                const feedbackClass = isCorrect ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+                const feedbackTitle = isCorrect ? 'Correto!' : 'Incorreto!';
+                feedbackArea.innerHTML = `
+                    <div class="${feedbackClass} p-4 rounded-md">
+                        <strong class="font-bold">${feedbackTitle}</strong>
+                        <p class="text-sm">${q.hint}</p>
+                    </div>
+                `;
+            },
+            
+            showHint() {
+                const feedbackArea = document.getElementById('feedback-area');
+                const q = contentData.exercicios[this.currentIndex];
+                feedbackArea.innerHTML = `
+                    <div class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 p-4 rounded-md">
+                        <strong class="font-bold">Dica:</strong>
+                        <p class="text-sm">${q.hint}</p>
+                    </div>
+                `;
+            },
+            
+            nextQuestion() {
+                this.currentIndex++;
+                this.renderQuestion();
+            },
+            
+            updateCounters() {
+                const data = AppState.get().exercicios;
+                document.getElementById('correct-count').textContent = data.correct;
+                document.getElementById('incorrect-count').textContent = data.incorrect;
+            },
+
+            showCompletion() {
+                document.getElementById('exercicio-container').innerHTML = `
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold mb-4">Parabéns!</h2>
+                        <p>Você completou todos os exercícios básicos.</p>
+                        <button onclick="UI.navigateTo('dashboard')" class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Voltar ao Dashboard</button>
+                    </div>
+                `;
+            }
+        };
+
+        // =================================================================================
+        // MÓDULO DE SIMULADOR DE CASOS
+        // =================================================================================
+        const Simulador = {
+            init() {
+                this.addEventListeners();
+            },
+            addEventListeners() {
+                const genBtn = document.getElementById('generate-case-btn');
+                const evalBtn = document.getElementById('evaluate-approach-btn');
+                const caseDisplay = document.getElementById('case-display');
+                const userInput = document.getElementById('user-approach-input');
+
+                genBtn.addEventListener('click', async () => {
+                    genBtn.disabled = true;
+                    genBtn.innerHTML = '<div class="spinner !w-5 !h-5 !border-2 mr-2"></div> Gerando...';
+                    const prompt = "Gere um caso clínico breve e comum para um estudante de medicina da família no Brasil. O caso deve ser apropriado para praticar o método da consulta em 7 passos. Inclua idade, gênero e queixa principal em 2 ou 3 frases.";
+                    const caseText = await GeminiAPI.generateContent(prompt);
+                    caseDisplay.innerHTML = `<p>${caseText.replace(/\n/g, '<br>')}</p>`;
+                    evalBtn.disabled = false;
+                    genBtn.disabled = false;
+                    genBtn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Gerar Novo Caso Clínico';
+                });
+
+                evalBtn.addEventListener('click', async () => {
+                    const caseText = caseDisplay.innerText;
+                    const userApproach = userInput.value;
+                    if (!userApproach.trim()) {
+                        UI.openModal('<p>Por favor, descreva sua abordagem antes de solicitar a avaliação.</p>', 'Atenção');
+                        return;
+                    }
+                    
+                    UI.showLoadingModal('Avaliando sua abordagem...');
+                    const prompt = `Você é um professor de medicina da família. Avalie a seguinte abordagem de um estudante para o caso clínico apresentado, usando os princípios da 'Consulta em 7 Passos'. Forneça um feedback construtivo, apontando pontos fortes e áreas para melhoria em cada passo, se possível. Seja claro e didático.\n\nCASO CLÍNICO:\n${caseText}\n\nABORDAGEM DO ESTUDANTE:\n${userApproach}`;
+                    const feedback = await GeminiAPI.generateContent(prompt);
+                    UI.openModal(`<div class="text-sm">${feedback.replace(/\n/g, '<br>')}</div>`, 'Feedback da IA');
+                });
+            }
+        };
+
+        // =================================================================================
+        // MÓDULO DE AVALIAÇÃO
+        // =================================================================================
+        const Avaliacao = {
+            currentLevel: null,
+            currentQuestions: [],
+            currentIndex: 0,
+            answers: [],
+            
+            renderLevelSelection() {
+                const data = AppState.get().avaliacao;
+                
+                const mediumCard = document.querySelector('.level-card[data-level="medio"]');
+                if (data.facil.score >= 70) {
+                    mediumCard.querySelector('button').disabled = false;
+                    mediumCard.querySelector('.lock-overlay').classList.add('hidden');
+                }
+                
+                const hardCard = document.querySelector('.level-card[data-level="dificil"]');
+                if (data.medio.score >= 80) {
+                    hardCard.querySelector('button').disabled = false;
+                    hardCard.querySelector('.lock-overlay').classList.add('hidden');
+                }
+                
+                document.getElementById('score-facil').textContent = data.facil.score !== null ? data.facil.score : '--';
+                document.getElementById('score-medio').textContent = data.medio.score !== null ? data.medio.score : '--';
+                document.getElementById('score-dificil').textContent = data.dificil.score !== null ? data.dificil.score : '--';
+                
+                document.querySelectorAll('.start-btn').forEach(btn => btn.addEventListener('click', e => {
+                    this.start(e.target.closest('.level-card').dataset.level);
+                }));
+            },
+            
+            start(level) {
+                this.currentLevel = level;
+                this.currentQuestions = [...contentData.avaliacao[level]];
+                this.currentIndex = 0;
+                this.answers = [];
+                this.renderModalQuestion();
+            },
+            
+            renderModalQuestion() {
+                const q = this.currentQuestions[this.currentIndex];
+                if (!q) {
+                    this.finish();
+                    return;
+                }
+                
+                const content = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Avaliação: ${this.currentLevel.charAt(0).toUpperCase() + this.currentLevel.slice(1)}</h2>
+                        <button class="close-modal-btn text-2xl">&times;</button>
+                    </div>
+                    <p class="mb-4">Questão ${this.currentIndex + 1} de ${this.currentQuestions.length}</p>
+                    <p class="font-semibold mb-4">${q.question}</p>
+                    <div class="space-y-3">
+                        ${q.options.map((opt, i) => `<button class="avaliacao-option-btn block w-full text-left p-3 border dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" data-index="${i}">${opt}</button>`).join('')}
+                    </div>
+                `;
+                UI.openModal(content);
+                document.querySelectorAll('.avaliacao-option-btn').forEach(btn => btn.addEventListener('click', e => {
+                    this.submitAnswer(parseInt(e.target.dataset.index));
+                }));
+            },
+            
+            submitAnswer(selectedIndex) {
+                this.answers.push({
+                    question: this.currentQuestions[this.currentIndex].question,
+                    selected: selectedIndex,
+                    correct: this.currentQuestions[this.currentIndex].answer,
+                    options: this.currentQuestions[this.currentIndex].options
+                });
+                this.currentIndex++;
+                this.renderModalQuestion();
+            },
+            
+            finish() {
+                const correctAnswers = this.answers.filter(a => a.selected === a.correct).length;
+                const score = Math.round((correctAnswers / this.currentQuestions.length) * 100);
+                
+                const report = {
+                    level: this.currentLevel,
+                    score: score,
+                    totalQuestions: this.currentQuestions.length,
+                    correctAnswers: correctAnswers,
+                    answers: this.answers
+                };
+                
+                AppState.update(data => {
+                    data.avaliacao[this.currentLevel].score = score;
+                    data.avaliacao[this.currentLevel].report = report;
+                });
+                
+                Gamification.addPoints(score);
+                Gamification.checkAndAwardBadges();
+                this.renderReport(report);
+            },
+            
+            renderReport(report) {
+                const content = `
+                    <div id="report-content">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold">Relatório de Desempenho</h2>
+                            <button class="close-modal-btn text-2xl">&times;</button>
+                        </div>
+                        <p class="text-lg mb-4"><strong>Nível:</strong> ${report.level.charAt(0).toUpperCase() + report.level.slice(1)}</p>
+                        <p class="text-4xl font-bold text-center my-6 ${report.score >= 70 ? 'text-green-500' : 'text-red-500'}">${report.score}%</p>
+                        <p class="text-center mb-6">Você acertou ${report.correctAnswers} de ${report.totalQuestions} questões.</p>
+                        <div class="border-t dark:border-gray-700 pt-4">
+                            <h3 class="font-semibold mb-2">Revisão das Questões:</h3>
+                            ${report.answers.map((a, i) => `
+                                <div class="mb-3 p-2 rounded-md ${a.selected === a.correct ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'}">
+                                    <p class="text-sm"><strong>${i+1}. ${a.question}</strong></p>
+                                    <p class="text-xs">Sua resposta: <span class="${a.selected === a.correct ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}">${a.options[a.selected]}</span></p>
+                                    ${a.selected !== a.correct ? `<p class="text-xs">Resposta correta: <span class="text-green-700 dark:text-green-300">${a.options[a.correct]}</span></p>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="mt-6 text-right">
+                        <button id="export-pdf-btn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Exportar PDF</button>
+                    </div>
+                `;
+                UI.openModal(content);
+                document.getElementById('export-pdf-btn').addEventListener('click', this.exportPDF);
+                UI.navigateTo('avaliacao'); // Recarrega a página de avaliação para mostrar o progresso
+            },
+
+            async exportPDF() {
+                const { jsPDF } = window.jspdf;
+                const reportContent = document.getElementById('report-content');
+                
+                const canvas = await html2canvas(reportContent, { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const ratio = canvasWidth / canvasHeight;
+                const imgWidth = pdfWidth - 40;
+                const imgHeight = imgWidth / ratio;
+                
+                pdf.addImage(imgData, 'PNG', 20, 20, imgWidth, imgHeight);
+                pdf.save('relatorio-desempenho.pdf');
+            }
+        };
+
+        // =================================================================================
+        // MÓDULO DE GAMIFICAÇÃO
+        // =================================================================================
+        const Gamification = {
+            addPoints(amount) {
+                AppState.update(data => { data.gamification.points += amount; });
+                this.showPointsNotification(amount);
+            },
+            
+            showPointsNotification(amount) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed bottom-5 right-5 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 fade-in';
+                notification.textContent = `+${amount} pontos!`;
+                document.body.appendChild(notification);
+                setTimeout(() => { notification.remove(); }, 3000);
+            },
+            
+            checkAndAwardBadges() {
+                const data = AppState.get();
+                badges.forEach(badge => {
+                    if (!data.gamification.badges.includes(badge.id) && badge.condition(data)) {
+                        AppState.update(d => d.gamification.badges.push(badge.id));
+                        this.showBadgeNotification(badge);
+                    }
+                });
+            },
+            
+            showBadgeNotification(badge) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-20 right-5 bg-blue-500 text-white px-4 py-3 rounded-lg shadow-lg z-50 fade-in flex items-center gap-3';
+                notification.innerHTML = `<i class="fas fa-medal text-2xl"></i> <div><p class="font-bold">Nova Conquista!</p><p class="text-sm">${badge.name}</p></div>`;
+                document.body.appendChild(notification);
+                setTimeout(() => { notification.remove(); }, 5000);
+            }
+        };
+
+        // Inicialização da Aplicação
+        AppState.init();
+        UI.init();
+    });
+    </script>
+
+</body>
+</html>
